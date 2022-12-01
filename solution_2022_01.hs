@@ -1,3 +1,4 @@
+{-# OPTIONS -Wunused-imports #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 -- Day 1 / 2022
@@ -5,7 +6,6 @@
 import Data.List (sort)
 import Data.Maybe
 import Data.Text (Text, pack, splitOn, unpack)
-import System.IO
 import Text.Read
 
 main :: IO ()
@@ -25,6 +25,4 @@ solve1 :: [[Int]] -> Int
 solve1 elves = maximum (map sum elves)
 
 solve2 :: [[Int]] -> Int
-solve2 elves = do
-  let (a : b : c : xs) = reverse (sort (map sum elves))
-  a + b + c
+solve2 elves = sum (take 3 (reverse (sort (map sum elves))))
