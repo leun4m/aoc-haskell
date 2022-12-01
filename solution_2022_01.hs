@@ -5,7 +5,6 @@
 import Data.List (sort)
 import Data.Maybe
 import Data.Text (Text, pack, splitOn, unpack)
-import GHC.Real (reduce)
 import System.IO
 import Text.Read
 
