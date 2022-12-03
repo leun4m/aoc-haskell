@@ -2,9 +2,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 -- Day 3 / 2022
+
 import Data.Char (isUpper, ord)
 import Data.Text (pack, splitOn, unpack)
-import GhcPlugins (panic)
 import Test.HUnit
 
 main :: IO ()
@@ -17,15 +17,8 @@ main = do
 parse :: String -> [String]
 parse input = filter (not . null) (map unpack (splitOn "\n" (pack input)))
 
-compartments :: String -> (String, String)
-compartments rucksack = splitAt (length rucksack `div` 2) rucksack
-
-findDouble :: (String, String) -> Char
-findDouble (x, y) = head (filter (`elem` y) x)
-
-findCommonElem :: [String] -> Char
-findCommonElem (x : y : z : _) = head (filter (\c -> c `elem` x && c `elem` y) z)
-findCommonElem _ = panic "Expected list with 3 elements"
+compartments :: String -> [String]
+compartments rucksack = partition (length rucksack `div` 2) rucksack
 
 priority :: Char -> Int
 priority x
@@ -33,14 +26,19 @@ priority x
   | otherwise = ord x - ord 'a' + 1
 
 solve1 :: [String] -> Int
-solve1 rucksack = sum (map (priority . findDouble . compartments) rucksack)
+solve1 rucksacks = sum (map (priority . head . commonElements . compartments) rucksacks)
 
 solve2 :: [String] -> Int
-solve2 rucksack = sum (map (priority . findCommonElem) (partition 3 rucksack))
+solve2 rucksacks = sum (map (priority . head . commonElements) (partition 3 rucksacks))
 
 partition :: Int -> [a] -> [[a]]
 partition _ [] = []
 partition n xs = take n xs : partition n (drop n xs)
+
+commonElements :: Eq a => [[a]] -> [a]
+commonElements [] = []
+commonElements [x] = x
+commonElements (x : xs) = filter (\z -> z `elem` commonElements xs) x
 
 -- Tests
 
