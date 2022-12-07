@@ -12,8 +12,7 @@ main = do
   input <- getContents
   let parsed = parse input
   print (solve1 parsed)
-
--- print (solve2 parsed)
+  print (solve2 parsed)
 
 type Stack = [Char]
 
@@ -53,25 +52,38 @@ transposeString ([] : _) = []
 -- transposeString x | trace ("transpose: " ++ show x) False = undefined
 transposeString x = map head x : transposeString (map tail x)
 
+solve :: [Stack] -> String
+solve = concatMap (take 1) 
+
 solve1 :: Output -> String
--- solve1 x | trace ("solve1" ++ show x) False = undefined
-solve1 x = concatMap (take 1) (applyInstructions x)
+solve1 x = solve $ applyInstructions1 x
 
-applyInstructions :: Output -> [Stack]
-applyInstructions (s, []) = s
-applyInstructions (s, x : xs) = applyInstructions (applyInstruction s x, xs)
+solve2 :: Output -> String
+solve2 x = solve $ applyInstructions2 x
 
-applyInstruction :: [Stack] -> Instruction -> [Stack]
-applyInstruction w (0, _, _) = w
-applyInstruction w (x, y, z) = do
+applyInstructions1 :: Output -> [Stack]
+applyInstructions1 (s, []) = s
+applyInstructions1 (s, x : xs) = applyInstructions1 (applyInstruction1 s x, xs)
+
+applyInstructions2 :: Output -> [Stack]
+applyInstructions2 (s, []) = s
+applyInstructions2 (s, x : xs) = applyInstructions2 (applyInstruction2 s x, xs)
+
+applyInstruction1 :: [Stack] -> Instruction -> [Stack]
+applyInstruction1 w (0, _, _) = w
+applyInstruction1 w (x, y, z) = do
   let item = take 1 (w !! (y - 1))
-  let newStack = zipWith (\i s -> switchIt (i, s) y z item) [1 ..] w
-  applyInstruction newStack (x -1, y, z)
+  let newStack = zipWith (\i s -> switchIt (i, s) 1 y z item) [1 ..] w
+  applyInstruction1 newStack (x - 1, y, z)
 
-switchIt :: (Int, Stack) -> Int -> Int -> [Char] -> Stack
-switchIt (i, s) y z item
-  | i == y = drop 1 s
-  | i == z = item ++ s
+applyInstruction2 :: [Stack] -> Instruction -> [Stack]
+applyInstruction2 w (0, _, _) = w
+applyInstruction2 w (x, y, z) = zipWith (\i s -> switchIt (i, s) x y z (take x (w !! (y - 1)))) [1 ..] w
+
+switchIt :: (Int, Stack) -> Int -> Int -> Int -> [Char] -> Stack
+switchIt (i, s) x y z w
+  | i == y = drop x s
+  | i == z = w ++ s
   | otherwise = s
 
 -- Tests
@@ -86,6 +98,6 @@ tests :: Test
 tests =
   TestList
     [ TestCase (assertEqual "Parse Example" exampleList (parse exampleInput)),
-      TestCase (assertEqual "Part1 Example" "CMZ" (solve1 exampleList))
-      -- TestCase (assertEqual "Part2 Example" 4 (solve2 exampleList))
+      TestCase (assertEqual "Part1 Example" "CMZ" (solve1 exampleList)),
+      TestCase (assertEqual "Part2 Example" "MCD" (solve2 exampleList))
     ]
