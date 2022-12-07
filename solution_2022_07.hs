@@ -4,6 +4,7 @@
 -- Day 6 / 2022
 
 import Data.Text as Text
+import Debug.Trace
 import Test.HUnit
 
 main :: IO ()
@@ -15,8 +16,40 @@ main = do
 -- print (solve1 x)
 -- print (solve2 input)
 
-data FileTree = Directory String [FileTree] | File String Int
+data FileTree = RootDirectory [FileTree] | Directory String FileTree [FileTree] | File String Int | None
   deriving (Show, Eq)
+
+filename :: FileTree -> String
+filename (RootDirectory _) = "/"
+filename (Directory x _ _) = x
+filename (File x _) = x
+filename _ = error "no name"
+
+appendToTree :: FileTree -> FileTree -> FileTree
+appendToTree f y | trace ("appendToTree: " ++ show f ++ " | " ++ show y) False = undefined
+appendToTree f (Directory x y z) = Directory x y (z ++ [f])
+appendToTree f (RootDirectory x) = RootDirectory (x ++ [f])
+appendToTree f y = error ("cannot append file : " ++ show f ++ " to " ++ show y)
+
+goUp :: FileTree -> FileTree
+goUp (Directory _ x _) = x
+goUp _ = error "cannot go up"
+
+goDown :: String -> FileTree -> FileTree
+goDown s (RootDirectory tree) = do
+  let nodes = Prelude.filter (matchName s) tree
+  let node = if not (Prelude.null nodes) then Prelude.head nodes else Directory s None []
+  let rest = Prelude.filter (not . matchName s) tree
+  RootDirectory (rest ++ [node])
+goDown s (Directory name up tree) = do
+  let nodes = Prelude.filter (matchName s) tree
+  let node = if not (Prelude.null nodes) then Prelude.head nodes else Directory s None []
+  let rest = Prelude.filter (not . matchName s) tree
+  Directory name up (rest ++ [node])
+goDown _ _ = error "cannot go down a file"
+
+matchName :: String -> FileTree -> Bool
+matchName x t = filename t == x
 
 data Cmd = ChangeDirectoryUp | ChangeDirectory String | ListDirectory | Tree FileTree
   deriving (Show, Eq)
@@ -43,10 +76,21 @@ mapThis x = do
     else do
       let isDir = Prelude.take 3 x
       if isDir == "dir"
-        then Tree (Directory (Prelude.take 3 x) [])
+        then Tree (Directory (Prelude.take 3 x) None [])
         else do
           let (size : filename : _) = Text.splitOn " " (pack x)
           Tree (File (unpack filename) (read (unpack size)))
+
+buildTree :: [Cmd] -> FileTree -> FileTree
+buildTree [] x = x
+buildTree (x : xs) y = buildTree xs (applyCmd x y)
+
+applyCmd :: Cmd -> FileTree -> FileTree
+applyCmd x y | trace ("applyCmd | " ++ show x ++ " | " ++ show y) False = undefined
+applyCmd ChangeDirectoryUp f = goUp f
+applyCmd (ChangeDirectory to) f = goDown to f
+applyCmd ListDirectory f = f
+applyCmd (Tree t) f = appendToTree f t
 
 -- solve1 :: String -> Int
 -- solve1 = firstUniqueChars 4
@@ -63,13 +107,13 @@ exampleOutput :: [Cmd]
 exampleOutput =
   [ ChangeDirectory "/",
     ListDirectory,
-    Tree (Directory "dir" []),
+    Tree (Directory "a" None []),
     Tree (File "b.txt" 14848514),
     Tree (File "c.dat" 8504156),
-    Tree (Directory "dir" []),
+    Tree (Directory "d" None []),
     ChangeDirectory "a",
     ListDirectory,
-    Tree (Directory "dir" []),
+    Tree (Directory "e" None []),
     Tree (File "f" 29116),
     Tree (File "g" 2557),
     Tree (File "h.lst" 62596),
