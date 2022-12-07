@@ -29,6 +29,8 @@ appendToTree :: FileTree -> FileTree -> FileTree
 appendToTree f y | trace ("appendToTree: " ++ show f ++ " | " ++ show y) False = undefined
 appendToTree f (Directory x y z) = Directory x y (z ++ [f])
 appendToTree f (RootDirectory x) = RootDirectory (x ++ [f])
+appendToTree (Directory x y z) (File f s) = Directory x y (z ++ [File f s])
+appendToTree (RootDirectory x) (File f s) = RootDirectory (x ++ [File f s])
 appendToTree f y = error ("cannot append file : " ++ show f ++ " to " ++ show y)
 
 goUp :: FileTree -> FileTree
@@ -76,7 +78,7 @@ mapThis x = do
     else do
       let isDir = Prelude.take 3 x
       if isDir == "dir"
-        then Tree (Directory (Prelude.take 3 x) None [])
+        then Tree (Directory (Prelude.drop 4 x) None [])
         else do
           let (size : filename : _) = Text.splitOn " " (pack x)
           Tree (File (unpack filename) (read (unpack size)))
